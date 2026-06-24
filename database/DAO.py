@@ -75,18 +75,21 @@ class DAO():
         results = []
 
         cursor = conn.cursor(dictionary=True)
-        query = """select distinct p1.product_id as pi1, p2.product_id as pi2, COUNT(o1.order_id ) as vendita1, COUNT(o2.order_id ) as vendita2
-                    from products p1, products p2, orders o1, orders o2, order_items oi1, order_items oi2
-                    where p1.product_id = oi1.product_id  and oi1.order_id = o1.order_id 
-                    and p2.product_id = oi2.product_id  and oi2.order_id = o2.order_id
-                    and p1.product_id < p2.product_id
-                    and p1.category_id =%s 
-                    and p2.category_id = %s
-                    and o1.order_date  between %s and %s
-                    and o2.order_date  between %s and %s
-                    group by p1.product_id, p2.product_id"""
+        query = """SELECT p1.product_id AS pi1, p2.product_id AS pi2,
+              (SELECT COUNT(DISTINCT o.order_id)
+               FROM order_items oi JOIN orders o ON oi.order_id = o.order_id
+               WHERE oi.product_id = p1.product_id
+                 AND o.order_date BETWEEN %s AND %s) AS vendita1,
+              (SELECT COUNT(DISTINCT o.order_id)
+               FROM order_items oi JOIN orders o ON oi.order_id = o.order_id
+               WHERE oi.product_id = p2.product_id
+                 AND o.order_date BETWEEN %s AND %s) AS vendita2
+           FROM products p1, products p2
+           WHERE p1.category_id = %s AND p2.category_id = %s
+             AND p1.product_id < p2.product_id
+           HAVING vendita1 > 0 AND vendita2 > 0"""
 
-        cursor.execute(query,(c,c,di,df,di,df))
+        cursor.execute(query,(di,df,di,df,c,c))
 
         for row in cursor:
             results.append((row["pi1"],row["pi2"],row["vendita1"],row["vendita2"]))
