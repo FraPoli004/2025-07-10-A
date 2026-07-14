@@ -45,7 +45,38 @@ class Controller:
         self._view.update_page()
 
     def handleCercaCammino(self, e):
-        pass
+        self._view.txt_result.controls.clear()
+        start = self._view._ddProdStart.value
+        end = self._view._ddProdEnd.value
+        if start is None or end is None:
+            self._view.txt_result.controls.append(ft.Text("Selezionare Start ed End product!", color="red"))
+            self._view.update_page();
+            return
+        try:
+            lun = int(self._view._txtInLun.value)
+        except (TypeError, ValueError):
+            self._view.txt_result.controls.append(ft.Text("Lunghezza cammino non valida!", color="red"))
+            self._view.update_page();
+            return
+
+        cammino, peso = self._model.cercaCammino(int(start), int(end), lun)
+        if cammino is None:
+            self._view.txt_result.controls.append(ft.Text("Nessun cammino trovato!", color="red"))
+            self._view.update_page();
+            return
+
+        self._view.txt_result.controls.append(ft.Text(f"Cammino di peso {peso}:"))
+        for n in cammino:
+            self._view.txt_result.controls.append(ft.Text(f"{n.product_name}"))
+        self._view.update_page()
+
+    def fillDDProducts(self):
+        self._view._ddProdStart.options.clear()
+        self._view._ddProdEnd.options.clear()
+        for n in self._model.getNodes():
+            self._view._ddProdStart.options.append(ft.dropdown.Option(key=n.product_id, text=n.product_name))
+            self._view._ddProdEnd.options.append(ft.dropdown.Option(key=n.product_id, text=n.product_name))
+        self._view.update_page()
 
 
 

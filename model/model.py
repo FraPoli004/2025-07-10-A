@@ -51,4 +51,51 @@ class Model:
         nodi.sort(key=lambda x: self._grafo.out_degree(x,'weight') - self._grafo.in_degree(x,'weight'), reverse=True)
         return nodi[:5]
 
+    def getNodes(self):
+        return sorted(self._grafo.nodes(), key=lambda n: n.product_name)
+
+    # ============================================================
+    # F1 - CAMMINO DI LUNGHEZZA FISSA A->B, PESO MASSIMO
+    # Launcher: azzera lo stato, risolve start/end da id, avvia ricorsione
+    # ============================================================
+    def cercaCammino(self, startId, endId, lun):
+        self._best = None
+        self._bestPeso = -1
+        start = self._idMap.get(startId)  # -------> idMap keyed su product_id (int)
+        end = self._idMap.get(endId)
+        if start is None or end is None:
+            return None, 0
+        self._ricorsione([start], end, lun)
+        return self._best, self._bestPeso
+
+    def _ricorsione(self, parziale, end, lun):
+        # CASO BASE: raggiunta la lunghezza voluta
+        if len(parziale) == lun:  # -------> NODI (==lun). Se "lunghezza"=archi usa (== lun+1)
+            if parziale[-1] == end:  # deve terminare nel nodo End
+                peso = self._pesoCammino(parziale)
+                if peso > self._bestPeso:  # tieni il peso massimo
+                    self._bestPeso = peso
+                    self._best = list(parziale)  # copia! non il riferimento
+            return
+        # PASSO RICORSIVO: espandi sui SUCCESSORI (rispetta i versi degli archi)
+        for succ in self._grafo.successors(parziale[-1]):  # -------> DiGraph: successors, non neighbors
+            if succ not in parziale:  # un nodo non si attraversa piu' volte
+                parziale.append(succ)
+                self._ricorsione(parziale, end, lun)
+                parziale.pop()  # backtracking
+
+    def _pesoCammino(self, cammino):
+        tot = 0
+        for i in range(len(cammino) - 1):  # -------> len-1: archi tra nodi consecutivi (no off-by-one)
+            tot += self._grafo[cammino[i]][cammino[i + 1]]['weight']
+        return tot
+
+    # NOTE (F1):
+    # - Vincoli mappati: "no nodi ripetuti" -> if succ not in parziale (prima dell'inclusione);
+    #   "termina in End" + "lunghezza == Lun" -> caso base; "rispetta i versi" -> successors().
+    # - "Lunghezza": qui contati i NODI (len==Lun). Se il tuo docente intende gli ARCHI, cambia
+    #   l'unica riga del caso base in (len(parziale) == lun + 1). E' l'unico punto da toccare.
+    # - Ottimizzazione opzionale: nel for, "if succ == end and len(parziale)+1 < lun: continue"
+    #   (raggiungere End prima della fine e' sempre un ramo morto, End non si puo' ripetere).
+
 
