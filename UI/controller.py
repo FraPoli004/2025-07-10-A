@@ -36,6 +36,7 @@ class Controller:
         self._view.txt_result.controls.append(ft.Text("grafo creato correttamente", color="green"))
         self._view.txt_result.controls.append(ft.Text(f'il grafo ha {self._model.get_numnodi()} nodi'))
         self._view.txt_result.controls.append(ft.Text(f'il grafo ha {self._model.get_numarchi()} archi'))
+        self.fillDDProducts()
         self._view.update_page()
 
     def handleBestProdotti(self, e):
